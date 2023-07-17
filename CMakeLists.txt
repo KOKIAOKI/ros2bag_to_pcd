@@ -6,27 +6,51 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io)
 find_package(pcl_conversions REQUIRED)
+find_package(rosbag2_cpp REQUIRED)
 
-add_executable(ros2bag_to_pcd 
-  src/online.cpp
-  src/online_node.cpp
+# online
+add_executable(online 
+  src/online/online.cpp
+  src/online/online_node.cpp
 )
 
-target_include_directories(ros2bag_to_pcd 
+target_include_directories(online 
   PUBLIC ${PROJECT_SOURCE_DIR}/include
 )
 
-target_link_libraries(ros2bag_to_pcd 
+target_link_libraries(online 
   ${PCL_LIBRARIES}
 )
 
-ament_target_dependencies(ros2bag_to_pcd
-  rclcpp 
+ament_target_dependencies(online
+  rclcpp
   sensor_msgs
   pcl_conversions
 )
 
-install(TARGETS ros2bag_to_pcd DESTINATION lib/${PROJECT_NAME})
+install(TARGETS online DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+
+# offline
+add_executable(offline
+  src/offline/offline.cpp
+)
+
+target_include_directories(offline 
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+)
+
+target_link_libraries(offline 
+  ${PCL_LIBRARIES}
+)
+
+ament_target_dependencies(offline
+  rclcpp
+  sensor_msgs
+  pcl_conversions
+  rosbag2_cpp
+)
+
+install(TARGETS offline DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
