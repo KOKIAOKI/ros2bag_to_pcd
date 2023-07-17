@@ -34,6 +34,24 @@ int main(int argc, char* argv[]) {
   try {
     // Open bagfile
     reader->open(storage_options, converter_options);
+    std::vector<double> pose_time_vec(10000);  // TODO num
+    std::vetor<msgs> pose_msgs_vec();
+
+    // Read messages from bagfile
+    while (reader->has_next()) {
+      auto bag_message = reader->read_next();
+
+      if (bag_message->topic_name == topic_name) {
+        sensor_msgs::msg::PointCloud2 msg;
+        rclcpp::Serialization<sensor_msgs::msg::PointCloud2> serialization;
+        rclcpp::SerializedMessage extracted_serialized_msg(*bag_message->serialized_data);
+        serialization.deserialize_message(&extracted_serialized_msg, &msg);
+
+        std::string time_stamp = std::to_string(msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr save_points(new pcl::PointCloud<pcl::PointXYZ>());
+        pcl::fromROSMsg(msg, *save_points);
+      }
+    }
 
     // Read messages from bagfile
     while (reader->has_next()) {
