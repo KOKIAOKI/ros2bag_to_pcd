@@ -2,10 +2,10 @@
 #include <memory>
 #include <string>
 #include <boost/filesystem.hpp>
+#include <util.hpp>
 
 #include <rosbag2_cpp/readers/sequential_reader.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <util.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/serialization.hpp>
