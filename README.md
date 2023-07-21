@@ -30,3 +30,9 @@ ros2 bag play [your bag file path]
 source install/setup.bash
 ros2 run ros2bag_to_pcd offline [your bag file path] [topic name] [save folder path]
 ```
+
+or
+```
+cd ros2_ws
+./build/ros2bag_to_pcd/offline [your bag file path] [topic name] [save folder path]
+``
