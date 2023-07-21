@@ -47,4 +47,4 @@ or
 ```
 cd ros2_ws
 ./build/ros2bag_to_pcd/create_map [your bag file path] [topic name] [trajectory topic name] [save folder path]
-``
+```
