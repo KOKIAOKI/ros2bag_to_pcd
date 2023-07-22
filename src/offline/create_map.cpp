@@ -3,7 +3,6 @@
 #include <string>
 #include <boost/filesystem.hpp>
 #include <util.hpp>
-#include <chrono>
 #include <rosbag2_cpp/readers/sequential_reader.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
@@ -54,7 +53,6 @@ int main(int argc, char* argv[]) {
   rosbag2_cpp::ConverterOptions converter_options;
   converter_options.output_serialization_format = "cdr";
 
-  auto t1 = std::chrono::high_resolution_clock::now();
   std::vector<double> pose_time_vec;
   pose_time_vec.reserve(500);
 
@@ -95,10 +93,6 @@ int main(int argc, char* argv[]) {
     std::cerr << "Error: " << e.what() << std::endl;
     return 1;
   }
-
-  auto t2 = std::chrono::high_resolution_clock::now();
-  double time = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() / 1e6;
-  std::cout << "[Localize]Execution time:" << time << "[msec] " << std::endl;
 
   for (const auto& msg : point_cloud_vec) {
     double sensor_time = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9;
