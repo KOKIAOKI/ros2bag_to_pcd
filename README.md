@@ -7,8 +7,8 @@
 please git clone in ros2_ws/src
 ```
 cd ros2_ws/src/
-git clone 
-cd ../../
+git clone https://github.com/KOKIAOKI/ros2bag_to_pcd.git
+cd ../
 colcon build
 ```
 
