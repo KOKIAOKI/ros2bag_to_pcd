@@ -1,12 +1,11 @@
-#include <online.hpp>
+#include <online/online.hpp>
 #include <util.hpp>
 #include <boost/filesystem.hpp>
 
 #include <pcl/io/pcd_io.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <pcl/common/transforms.h>
 
-Online::Online(const rclcpp::NodeOptions& node_options) : Node("ros2bag_to_pcd", node_options) {
+Online::Online(const rclcpp::NodeOptions& node_options) : Node("online", node_options) {
   params_.output_pcd_folder = this->declare_parameter<std::string>("output_pcd_folder");
   params_.lidar_topic_name = this->declare_parameter<std::string>("lidar_topic_name");
   std::cout << "lidar topic name: " << params_.lidar_topic_name << std::endl;
