@@ -40,7 +40,7 @@ cd ros2_ws
 ### create map
 ```
 source install/setup.bash
-ros2 run ros2bag_to_pcd offline [your bag file path] [topic name] [trajectory topic name] [save folder path]
+ros2 run ros2bag_to_pcd create_map [your bag file path] [topic name] [trajectory topic name] [save folder path]
 ```
 
 or
