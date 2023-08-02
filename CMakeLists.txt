@@ -77,7 +77,28 @@ ament_target_dependencies(create_map
   rosbag2_cpp
 )
 
-install(TARGETS create_map DESTINATION lib/${PROJECT_NAME})
+# offline leveling
+add_executable(leveling
+  src/offline/leveling.cpp
+)
+
+target_include_directories(leveling 
+  PUBLIC ${PROJECT_SOURCE_DIR}/include
+  ${EIGEN3_INCLUDE_DIR}
+)
+
+target_link_libraries(leveling 
+  ${PCL_LIBRARIES}
+)
+
+ament_target_dependencies(leveling
+  rclcpp
+  sensor_msgs
+  pcl_conversions
+  rosbag2_cpp
+)
+
+install(TARGETS leveling DESTINATION lib/${PROJECT_NAME})
 
 
 ament_package()
