@@ -9,7 +9,7 @@ please git clone in ros2_ws/src
 cd ros2_ws/src/
 git clone https://github.com/KOKIAOKI/ros2bag_to_pcd.git
 cd ../
-colcon build
+colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 
 ## Run
@@ -47,4 +47,10 @@ or
 ```
 cd ros2_ws
 ./build/ros2bag_to_pcd/create_map [your bag file path] [topic name] [trajectory topic name] [save folder path]
+```
+
+### leveling point cloud
+```
+source install/setup.bash
+ros2 run ros2bag_to_pcd create_map [your bag file path] [lidar topic name] [imu topic name] [save folder path]
 ```
