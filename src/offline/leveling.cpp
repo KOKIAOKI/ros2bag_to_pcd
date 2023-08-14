@@ -33,12 +33,13 @@ void createCsvIndex(std::string output_folder_dir) {
   // clang-format off
   ofs_ << "sensor_time" << ","
       << "pose_time" << ","
-      << "pose_x" << ","
-      << "pose_y" << ","
-      << "pose_z" << ","
-      << "pose_roll" << ","
-      << "pose_pitch" << ","
-      << "pose_yaw" << ","
+      << "position_x" << ","
+      << "position_y" << ","
+      << "position_z" << ","
+      << "orientation_x" << ","
+      << "orientation_y" << ","
+      << "orientation_z" << ","
+      << "orientation_w" << ","
       << std::endl;
 }  // clang-format on
 
