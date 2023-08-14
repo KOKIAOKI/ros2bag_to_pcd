@@ -3,9 +3,11 @@
 #include <string>
 #include <boost/filesystem.hpp>
 #include <util.hpp>
+#include <random>
+#include <fstream>
 #include <rosbag2_cpp/readers/sequential_reader.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <sensor_msgs/msg/imu.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/serialization.hpp>
@@ -17,31 +19,75 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
-Eigen::Matrix4f createTransformationMatrix(const sensor_msgs::msg::Imu& imu_msg) {
-  Eigen::Vector3f acc(imu_msg.linear_acceleration.x, imu_msg.linear_acceleration.y, imu_msg.linear_acceleration.z);
-  Eigen::Vector3f th;
-  th.x() = std::atan2(acc.y(), acc.z());
-  th.y() = std::atan2(-acc.x(), std::sqrt(acc.y() * acc.y() + acc.z() * acc.z()));
-  th.z() = 0.0f;
+std::ofstream ofs_;
 
-  Eigen::Matrix3f rot;
-  rot = Eigen::AngleAxisf(th.x(), Eigen::Vector3f::UnitX()) * Eigen::AngleAxisf(th.y(), Eigen::Vector3f::UnitY()) * Eigen::AngleAxisf(th.z(), Eigen::Vector3f::UnitZ());
-  Eigen::Matrix4f mat = Eigen::Matrix4f::Identity();
-  mat.block<3, 3>(0, 0) = rot;
+void createCsvIndex(std::string output_folder_dir) {
+  std::string output_filename = output_folder_dir + "/ground_truth.csv";
+  std::cout << "csv file name: " << output_filename.c_str() << std::endl;
+  ofs_.open(output_filename.c_str());
+  if (!ofs_.is_open()) {
+    std::cerr << "can not create csv file" << std::endl;
+    exit(1);
+  }
 
-  return mat;
+  // clang-format off
+  ofs_ << "sensor_time" << ","
+      << "pose_time" << ","
+      << "pose_x" << ","
+      << "pose_y" << ","
+      << "pose_z" << ","
+      << "pose_roll" << ","
+      << "pose_pitch" << ","
+      << "pose_yaw" << ","
+      << std::endl;
+}  // clang-format on
+
+Eigen::Vector3f QuaternionToEuler(const Eigen::Quaternionf& q) {
+  Eigen::Vector3f euler = q.toRotationMatrix().eulerAngles(2, 1, 0);  // z-y-x
+  return euler;
+}
+
+Eigen::Matrix4f CreateTransformMatrix(const Eigen::Vector3f& euler) {
+  Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<float> dis(-0.01, 0.01);
+
+  float roll = euler(2) + dis(gen);
+  float pitch = euler(1) + dis(gen);
+  // float yaw = euler(0) + dis(gen);
+
+  Eigen::AngleAxisf rollAngle(roll, Eigen::Vector3f::UnitX());
+  Eigen::AngleAxisf pitchAngle(pitch, Eigen::Vector3f::UnitY());
+  Eigen::AngleAxisf yawAngle(0.0f, Eigen::Vector3f::UnitZ());
+
+  Eigen::Quaternionf q = yawAngle * pitchAngle * rollAngle;
+  transform.block<3, 3>(0, 0) = q.matrix();
+
+  return transform;
+}
+
+Eigen::Matrix4f createTransformationMatrix(const geometry_msgs::msg::PoseStamped& msg) {
+  Eigen::Quaternionf q(msg.pose.orientation.w, msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z);
+
+  Eigen::Vector3f euler = QuaternionToEuler(q);
+  Eigen::Matrix4f transform = CreateTransformMatrix(euler);
+
+  return transform;
 }
 
 int main(int argc, char* argv[]) {
   std::string bag_file = argv[1];
   std::string lidar_topic_name = argv[2];
-  std::string imu_topic_name = argv[3];
+  std::string pose_topic_name = argv[3];
   std::string save_dir = argv[4];
 
   // create save file
   std::string date = create_date();
   std::string save_folder_name = save_dir + "/" + date;
   boost::filesystem::create_directory(save_folder_name);
+  createCsvIndex(save_folder_name);
 
   // Create SequentialReader
   auto reader = std::make_shared<rosbag2_cpp::readers::SequentialReader>();
@@ -54,8 +100,8 @@ int main(int argc, char* argv[]) {
   std::vector<double> pose_time_vec;
   pose_time_vec.reserve(500);
 
-  std::vector<sensor_msgs::msg::Imu> imu_msgs;
-  imu_msgs.reserve(1000);
+  std::vector<geometry_msgs::msg::PoseStamped> pose_msgs;
+  pose_msgs.reserve(1000);
 
   std::vector<sensor_msgs::msg::PointCloud2> lidar_msgs;
   lidar_msgs.reserve(500);
@@ -69,14 +115,14 @@ int main(int argc, char* argv[]) {
     while (reader->has_next()) {
       auto bag_message = reader->read_next();
 
-      if (bag_message->topic_name == imu_topic_name) {
-        sensor_msgs::msg::Imu msg;
-        rclcpp::Serialization<sensor_msgs::msg::Imu> serialization;
+      if (bag_message->topic_name == pose_topic_name) {
+        geometry_msgs::msg::PoseStamped msg;
+        rclcpp::Serialization<geometry_msgs::msg::PoseStamped> serialization;
         rclcpp::SerializedMessage extracted_serialized_msg(*bag_message->serialized_data);
         serialization.deserialize_message(&extracted_serialized_msg, &msg);
 
         pose_time_vec.emplace_back(msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9);
-        imu_msgs.emplace_back(msg);
+        pose_msgs.emplace_back(msg);
       }
 
       if (bag_message->topic_name == lidar_topic_name) {
@@ -100,11 +146,26 @@ int main(int argc, char* argv[]) {
     std::vector<double>::iterator min_error_iter =
       std::min_element(pose_time_vec.begin(), pose_time_vec.end(), [sensor_time](double a, double b) { return std::abs(a - sensor_time) < std::abs(b - sensor_time); });
     int index = std::distance(pose_time_vec.begin(), min_error_iter);
-    sensor_msgs::msg::Imu imu_msg = imu_msgs[index];
+    geometry_msgs::msg::PoseStamped pose_msg = pose_msgs[index];
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr save_points(new pcl::PointCloud<pcl::PointXYZ>());
-    pcl::transformPointCloud(*raw_points, *save_points, createTransformationMatrix(imu_msg));
+    pcl::transformPointCloud(*raw_points, *save_points, createTransformationMatrix(pose_msg));
     pcl::io::savePCDFileBinary(save_folder_name + "/" + std::to_string(sensor_time) + ".pcd", *save_points);
+
+    // save data
+    // clang-format off
+    ofs_ << std::fixed << std::setprecision(10)
+          << sensor_time << ","
+          << pose_time_vec[index] << ","
+          << pose_msg.pose.position.x << "," 
+          << pose_msg.pose.position.y << ","
+          << pose_msg.pose.position.z <<","
+          << pose_msg.pose.orientation.x << ","
+          << pose_msg.pose.orientation.y << ","
+          << pose_msg.pose.orientation.z << ","
+          << pose_msg.pose.orientation.w << ","
+          << std::endl;
+    // clang-format on
   }
 
   return 0;
