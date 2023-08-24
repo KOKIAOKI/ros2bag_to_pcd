@@ -19,6 +19,8 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 
+#define EVA_DISTANE 0.0
+
 std::ofstream ofs_;
 
 void createCsvIndex(std::string output_folder_dir) {
@@ -139,6 +141,11 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // double distance_from_prior_pose;
+  // double prior_x;
+  // double prior_y;
+  // bool first_count = true;
+
   for (const auto& msg : lidar_msgs) {
     double sensor_time = msg.header.stamp.sec + msg.header.stamp.nanosec / 1e9;
     pcl::PointCloud<pcl::PointXYZ>::Ptr raw_points(new pcl::PointCloud<pcl::PointXYZ>());
@@ -149,6 +156,17 @@ int main(int argc, char* argv[]) {
     int index = std::distance(pose_time_vec.begin(), min_error_iter);
     geometry_msgs::msg::PoseStamped pose_msg = pose_msgs[index];
 
+    // if (first_count) {
+    //   first_count = false;
+    // } else {
+    //   double x_dis = pose_msg.pose.position.x - prior_x;
+    //   double y_dis = pose_msg.pose.position.y - prior_y;
+    //   distance_from_prior_pose += std::sqrt(x_dis * x_dis + y_dis * y_dis);
+    // }
+    // prior_x = pose_msg.pose.position.x;
+    // prior_y = pose_msg.pose.position.y;
+
+    // if (first_count || distance_from_prior_pose > EVA_DISTANE) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr save_points(new pcl::PointCloud<pcl::PointXYZ>());
     pcl::transformPointCloud(*raw_points, *save_points, createTransformationMatrix(pose_msg));
     pcl::io::savePCDFileBinary(save_folder_name + "/" + std::to_string(sensor_time) + ".pcd", *save_points);
@@ -167,7 +185,9 @@ int main(int argc, char* argv[]) {
           << pose_msg.pose.orientation.w << ","
           << std::endl;
     // clang-format on
+    // distance_from_prior_pose = 0.0;
   }
+  // }
 
   return 0;
 }
