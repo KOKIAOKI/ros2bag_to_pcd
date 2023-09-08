@@ -1,4 +1,5 @@
 ## ros2bag_to_pcd
+Convert PointCloud2 in ros2bag to pcd
 
 ## Environment
 - ubuntu22 ros2 humble
@@ -14,7 +15,7 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 
 ## Run
 ### online
-Please correct parameter so that the topic can be read.
+Please correct online_launch.py parameter so that the topic can be read.
 First terminal
 ```
 source install/setup.bash
