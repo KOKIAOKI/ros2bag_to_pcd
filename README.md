@@ -53,5 +53,5 @@ cd ros2_ws
 ### leveling point cloud
 ```
 source install/setup.bash
-ros2 run ros2bag_to_pcd create_map [your bag file path] [lidar topic name] [imu topic name] [save folder path]
+ros2 run ros2bag_to_pcd leveling [your bag file path] [lidar topic name] [imu topic name] [save folder path]
 ```
