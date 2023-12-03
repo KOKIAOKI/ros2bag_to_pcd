@@ -18,6 +18,9 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 source install/setup.bash
 ros2 run ros2bag_to_pcd leveling [your bag file path] [lidar topic name] [imu topic name] [save folder path]
 ```
+====Support msg type====   
+lidar: **sensor_msgs/PointCloud2**  
+imu: **sensor_msgs/Imu**  
 
 ## Basic Run
 ### 1. online
